@@ -1,149 +1,232 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OpNet Staking Demo</title>
+<title>OpNet Staking</title>
+
 <style>
-body{
-  font-family:Arial, sans-serif;
-  background:#f4f4f4;
-  margin:0;
-}
+body{margin:0;font-family:Arial;background:#f5f5f5}
 .header{
-  background:#111;
-  color:white;
-  padding:15px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
+background:white;
+padding:15px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+box-shadow:0 2px 5px rgba(0,0,0,0.1)
 }
-button{
-  padding:10px 15px;
-  border:none;
-  border-radius:6px;
-  cursor:pointer;
-  font-weight:bold;
+.logo{font-weight:bold;font-size:18px}
+.connect{
+background:#ff6600;
+color:white;
+border:none;
+padding:8px 14px;
+border-radius:6px;
+font-weight:bold;
+cursor:pointer;
 }
-.connect{background:#ff6600;color:white;}
-.container{padding:20px;}
+.nav{
+display:flex;
+justify-content:space-around;
+background:white;
+padding:10px 0;
+position:fixed;
+bottom:0;
+width:100%;
+box-shadow:0 -2px 5px rgba(0,0,0,0.1)
+}
+.nav button{
+background:none;
+border:none;
+font-weight:bold;
+cursor:pointer;
+}
+.container{padding:20px;padding-bottom:80px}
 .card{
-  background:white;
-  padding:20px;
-  border-radius:10px;
-  margin-bottom:15px;
-  box-shadow:0 4px 10px rgba(0,0,0,0.1);
+background:white;
+padding:15px;
+border-radius:10px;
+margin-bottom:15px;
+box-shadow:0 3px 8px rgba(0,0,0,0.1)
 }
 input{
-  width:100%;
-  padding:10px;
-  margin-top:10px;
-  margin-bottom:10px;
-  border-radius:6px;
-  border:1px solid #ccc;
+width:100%;
+padding:10px;
+margin-top:10px;
+margin-bottom:10px;
+border-radius:6px;
+border:1px solid #ccc;
 }
-.stake{background:green;color:white;width:100%;}
-.unstake{background:red;color:white;width:100%;}
-.claim{background:#ff6600;color:white;width:100%;margin-top:10px;}
-.info{font-weight:bold;margin-top:10px;}
+button.action{
+width:100%;
+padding:10px;
+border:none;
+border-radius:6px;
+font-weight:bold;
+cursor:pointer;
+margin-top:5px;
+}
+.stake{background:green;color:white}
+.unstake{background:red;color:white}
+.claim{background:#ff6600;color:white}
+.hidden{display:none}
 </style>
 </head>
+
 <body>
 
 <div class="header">
-  <div>OpNet Staking</div>
-  <button class="connect" onclick="connectWallet()" id="connectBtn">Connect</button>
+<div class="logo">OpNet Staking</div>
+<button class="connect" onclick="connectWallet()" id="connectBtn">Connect OpWallet</button>
 </div>
 
 <div class="container">
 
-  <div class="card">
-    <h3>Dashboard</h3>
-    <div>Total Balance: <span id="balance">1250</span> OP</div>
-    <div>Total Staked: <span id="staked">0</span> OP</div>
-    <div>Rewards: <span id="rewards">0</span> OP</div>
-  </div>
+<!-- DASHBOARD -->
+<div id="dashboardPage">
 
-  <div class="card">
-    <h3>Stake / Unstake</h3>
-    <input type="number" id="amount" placeholder="Enter OP amount">
-    <button class="stake" onclick="stake()">Stake</button>
-    <button class="unstake" onclick="unstake()">Unstake</button>
-    <button class="claim" onclick="claim()">Claim Rewards</button>
-    <div class="info" id="message"></div>
-  </div>
+<div class="card">
+<h3>Dashboard</h3>
+<p>Total Staked: <b><span id="totalStaked">0</span> OP</b></p>
+<p>Pending Rewards: <b><span id="pendingRewards">0</span> OP</b></p>
+<p>Portfolio Value: <b>$<span id="portfolioValue">0</span></b></p>
+</div>
+
+<div class="card">
+<h3>Active Pools</h3>
+<p>OP/BTC — 24.5% APY</p>
+<p>OP/ETH — 18.2% APY</p>
+<p>OP Solo — 12.8% APY</p>
+</div>
 
 </div>
 
-<script>
-let connected = false;
-let balance = 1250;
-let staked = 0;
-let rewards = 0;
+<!-- STAKE PAGE -->
+<div id="stakePage" class="hidden">
 
-function updateUI(){
-  document.getElementById("balance").innerText = balance;
-  document.getElementById("staked").innerText = staked;
-  document.getElementById("rewards").innerText = rewards.toFixed(2);
-}
+<div class="card">
+<h3>Stake / Unstake</h3>
+<input type="number" id="amount" placeholder="Enter OP amount">
+<button class="action stake" onclick="stake()">Stake</button>
+<button class="action unstake" onclick="unstake()">Unstake</button>
+</div>
+
+</div>
+
+<!-- REWARDS PAGE -->
+<div id="rewardsPage" class="hidden">
+
+<div class="card">
+<h3>Your Rewards</h3>
+<p><b><span id="rewardDisplay">0</span> OP</b></p>
+<button class="action claim" onclick="claimRewards()">Claim Rewards</button>
+</div>
+
+</div>
+
+<!-- HISTORY PAGE -->
+<div id="historyPage" class="hidden">
+
+<div class="card">
+<h3>Transaction History</h3>
+<ul id="historyList"></ul>
+</div>
+
+</div>
+
+</div>
+
+<!-- BOTTOM NAV -->
+<div class="nav">
+<button onclick="showPage('dashboard')">Dashboard</button>
+<button onclick="showPage('stake')">Stake</button>
+<button onclick="showPage('rewards')">Rewards</button>
+<button onclick="showPage('history')">History</button>
+</div>
+
+<script>
+
+let connected=false;
+let balance=1250;
+let staked=0;
+let rewards=0;
+let history=[];
 
 function connectWallet(){
-  connected = !connected;
-  const btn = document.getElementById("connectBtn");
-  if(connected){
-    btn.innerText = "Connected";
-    btn.style.background = "green";
-    showMessage("Wallet Connected");
-  }else{
-    btn.innerText = "Connect";
-    btn.style.background = "#ff6600";
-    showMessage("Wallet Disconnected");
-  }
+connected=!connected;
+let btn=document.getElementById("connectBtn");
+if(connected){
+btn.innerText="Connected";
+btn.style.background="green";
+}else{
+btn.innerText="Connect OpWallet";
+btn.style.background="#ff6600";
+}
 }
 
 function stake(){
-  if(!connected) return showMessage("Connect wallet first!");
-  let amt = parseFloat(document.getElementById("amount").value);
-  if(!amt || amt<=0) return showMessage("Enter valid amount");
-  if(amt>balance) return showMessage("Insufficient balance");
+if(!connected) return alert("Connect wallet first!");
+let amt=parseFloat(document.getElementById("amount").value);
+if(!amt||amt<=0) return alert("Enter valid amount");
+if(amt>balance) return alert("Insufficient balance");
 
-  balance -= amt;
-  staked += amt;
-  rewards += amt * 0.02; // 2% instant reward demo
+balance-=amt;
+staked+=amt;
+let reward=amt*0.02;
+rewards+=reward;
 
-  updateUI();
-  showMessage("Stake successful");
+history.push("Staked "+amt+" OP");
+updateUI();
 }
 
 function unstake(){
-  if(!connected) return showMessage("Connect wallet first!");
-  let amt = parseFloat(document.getElementById("amount").value);
-  if(!amt || amt<=0) return showMessage("Enter valid amount");
-  if(amt>staked) return showMessage("Not enough staked");
+if(!connected) return alert("Connect wallet first!");
+let amt=parseFloat(document.getElementById("amount").value);
+if(!amt||amt<=0) return alert("Enter valid amount");
+if(amt>staked) return alert("Not enough staked");
 
-  staked -= amt;
-  balance += amt;
-
-  updateUI();
-  showMessage("Unstake successful");
+staked-=amt;
+balance+=amt;
+history.push("Unstaked "+amt+" OP");
+updateUI();
 }
 
-function claim(){
-  if(!connected) return showMessage("Connect wallet first!");
-  if(rewards<=0) return showMessage("No rewards available");
+function claimRewards(){
+if(!connected) return alert("Connect wallet first!");
+if(rewards<=0) return alert("No rewards");
 
-  balance += rewards;
-  rewards = 0;
-
-  updateUI();
-  showMessage("Rewards claimed");
+balance+=rewards;
+history.push("Claimed "+rewards.toFixed(2)+" OP rewards");
+rewards=0;
+updateUI();
 }
 
-function showMessage(msg){
-  document.getElementById("message").innerText = msg;
+function updateUI(){
+document.getElementById("totalStaked").innerText=staked;
+document.getElementById("pendingRewards").innerText=rewards.toFixed(2);
+document.getElementById("rewardDisplay").innerText=rewards.toFixed(2);
+document.getElementById("portfolioValue").innerText=(staked*2).toFixed(2);
+
+let list=document.getElementById("historyList");
+list.innerHTML="";
+history.forEach(h=>{
+let li=document.createElement("li");
+li.innerText=h;
+list.appendChild(li);
+});
+}
+
+function showPage(page){
+document.getElementById("dashboardPage").classList.add("hidden");
+document.getElementById("stakePage").classList.add("hidden");
+document.getElementById("rewardsPage").classList.add("hidden");
+document.getElementById("historyPage").classList.add("hidden");
+
+document.getElementById(page+"Page").classList.remove("hidden");
 }
 
 updateUI();
+
 </script>
 
 </body>

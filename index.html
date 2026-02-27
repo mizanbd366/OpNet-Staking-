@@ -1,262 +1,126 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OpNet Staking Pro</title>
-
-<script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
-
+<title>OpNet Staking Simulator</title>
 <style>
-body{margin:0;font-family:Arial;background:#f4f6f9}
-.header{
-background:white;
-padding:15px;
-display:flex;
-justify-content:space-between;
-align-items:center;
-box-shadow:0 2px 5px rgba(0,0,0,0.1)
+:root {
+  --accent: #e8600a; --green: #15803d; --red: #dc2626;
+  --surface: #fff; --bg:#f7f5f0; --text:#1a1714; --text2:#7a746e;
 }
-.logo{font-weight:bold;font-size:18px}
-.connect{
-background:#ff6600;
-color:white;
-border:none;
-padding:8px 14px;
-border-radius:6px;
-font-weight:bold;
-cursor:pointer;
-}
-.nav{
-display:flex;
-justify-content:space-around;
-background:white;
-padding:12px 0;
-position:fixed;
-bottom:0;
-width:100%;
-box-shadow:0 -2px 5px rgba(0,0,0,0.1)
-}
-.nav button{
-background:none;
-border:none;
-font-weight:bold;
-cursor:pointer;
-}
-.container{padding:20px;padding-bottom:90px}
-.card{
-background:white;
-padding:15px;
-border-radius:12px;
-margin-bottom:15px;
-box-shadow:0 4px 10px rgba(0,0,0,0.08)
-}
-input{
-width:100%;
-padding:10px;
-margin-top:10px;
-margin-bottom:10px;
-border-radius:6px;
-border:1px solid #ccc;
-}
-button.action{
-width:100%;
-padding:10px;
-border:none;
-border-radius:6px;
-font-weight:bold;
-cursor:pointer;
-margin-top:5px;
-}
-.stake{background:green;color:white}
-.unstake{background:red;color:white}
-.claim{background:#ff6600;color:white}
-.hidden{display:none}
+body{font-family:sans-serif;background:var(--bg);margin:0;padding:0;}
+#topbar{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--surface);border-bottom:1px solid #ddd;}
+#topbar h1{font-size:1rem;}
+button{cursor:pointer;padding:8px 14px;border:none;border-radius:8px;font-weight:700;}
+#connectBtn{background:var(--accent);color:#fff;}
+#walletInfo{margin-left:10px;font-weight:700;color:var(--accent);}
+.container{padding:16px;}
+.card{background:var(--surface);padding:14px;margin-bottom:12px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05);}
+.pool-card{border:1px solid #ddd;padding:12px;margin-bottom:10px;border-radius:10px;}
+.pbar{height:6px;background:#eee;border-radius:3px;margin:6px 0;}
+.pbar-fill{height:100%;background:var(--accent);border-radius:3px;width:0;}
+input[type=number]{width:100%;padding:8px;border-radius:8px;border:1px solid #ccc;margin-top:4px;margin-bottom:6px;}
+button.stakeBtn{background:var(--accent);color:#fff;width:100%;}
 </style>
 </head>
-
 <body>
 
-<div class="header">
-<div class="logo">OpNet Staking</div>
-<button class="connect" onclick="connectWallet()" id="connectBtn">Connect Wallet</button>
+<div id="topbar">
+  <h1>OpNet Staking</h1>
+  <div>
+    <button id="connectBtn" onclick="connectOpWallet()">Connect OpWallet</button>
+    <span id="walletInfo"></span>
+  </div>
 </div>
 
 <div class="container">
+  <!-- Dashboard -->
+  <div class="card">
+    <h3>Dashboard</h3>
+    <p>Total Staked: <span id="totalStaked">0 OP</span></p>
+    <p>Pending Rewards: <span id="pendingRewards">0 OP</span></p>
+    <p>Portfolio Value: <span id="portfolioValue">$0.00</span></p>
+  </div>
 
-<!-- DASHBOARD -->
-<div id="dashboardPage">
+  <!-- Active Pools -->
+  <div class="card">
+    <h3>Active Pools</h3>
 
-<div class="card">
-<h3>Dashboard</h3>
-<p>Wallet Balance: <b><span id="walletBalance">0</span> OP</b></p>
-<p>Total Staked: <b><span id="totalStaked">0</span> OP</b></p>
-<p>Pending Rewards: <b><span id="pendingRewards">0</span> OP</b></p>
-<p>Portfolio Value: <b>$<span id="portfolioValue">0</span></b></p>
-</div>
+    <div class="pool-card">
+      <strong>OP / BTC — 24.5% APY</strong>
+      <p>Total Liquidity: $4.2M</p>
+      <p>My Stake: <span id="pool0Stake">0 OP</span></p>
+      <p>Min Lock: 7 Days | Participants: 1,248</p>
+      <div class="pbar"><div class="pbar-fill" style="width:72%"></div></div>
+      <input type="number" id="pool0Input" placeholder="Stake OP">
+      <button class="stakeBtn" onclick="stake(0)">Stake</button>
+    </div>
 
-<div class="card">
-<h3>Active Pools</h3>
-<p>OP/BTC — 24.5% APY</p>
-<p>OP/ETH — 18.2% APY</p>
-<p>OP Solo — 12.8% APY</p>
-</div>
+    <div class="pool-card">
+      <strong>OP / ETH — 18.2% APY</strong>
+      <p>Total Liquidity: $2.8M</p>
+      <p>My Stake: <span id="pool1Stake">0 OP</span></p>
+      <p>Min Lock: 3 Days | Participants: 894</p>
+      <div class="pbar"><div class="pbar-fill" style="width:48%;background:#3b82f6;"></div></div>
+      <input type="number" id="pool1Input" placeholder="Stake OP">
+      <button class="stakeBtn" style="background:#3b82f6" onclick="stake(1)">Stake</button>
+    </div>
 
-</div>
-
-<!-- STAKE -->
-<div id="stakePage" class="hidden">
-<div class="card">
-<h3>Stake / Unstake</h3>
-<input type="number" id="amount" placeholder="Enter OP amount">
-<button class="action stake" onclick="stake()">Stake</button>
-<button class="action unstake" onclick="unstake()">Unstake</button>
-</div>
-</div>
-
-<!-- REWARDS -->
-<div id="rewardsPage" class="hidden">
-<div class="card">
-<h3>Your Rewards</h3>
-<p><b><span id="rewardDisplay">0</span> OP</b></p>
-<button class="action claim" onclick="claimRewards()">Claim Rewards</button>
-</div>
-</div>
-
-<!-- HISTORY -->
-<div id="historyPage" class="hidden">
-<div class="card">
-<h3>Transaction History</h3>
-<ul id="historyList"></ul>
-</div>
-</div>
-
-</div>
-
-<!-- NAV -->
-<div class="nav">
-<button onclick="showPage('dashboard')">Dashboard</button>
-<button onclick="showPage('stake')">Stake</button>
-<button onclick="showPage('rewards')">Rewards</button>
-<button onclick="showPage('history')">History</button>
+    <div class="pool-card">
+      <strong>OP Solo — 12.8% APY</strong>
+      <p>Total Liquidity: $1.1M</p>
+      <p>My Stake: <span id="pool2Stake">0 OP</span></p>
+      <p>Min Lock: 1 Day | Participants: 562</p>
+      <div class="pbar"><div class="pbar-fill" style="width:31%;background:#16a34a;"></div></div>
+      <input type="number" id="pool2Input" placeholder="Stake OP">
+      <button class="stakeBtn" style="background:#16a34a" onclick="stake(2)">Stake</button>
+    </div>
+  </div>
 </div>
 
 <script>
+// Simulation Data
+let user = {address: "", balance: 1250}; // Initial faucet balance
+let stakes = [0,0,0];
 
-let provider;
-let signer;
-let userAddress=null;
+// Connect OpWallet (simulation)
+function connectOpWallet() {
+  // Simulate OpWallet popup
+  let name = prompt("OpWallet Connected! Enter your wallet name/address:", "0xABC123...");
+  if(!name) return;
+  user.address = name;
+  document.getElementById("walletInfo").innerText = `${user.address} | Balance: ${user.balance} OP`;
+  alert("OpWallet faucet loaded: 1250 OP available");
+}
 
-let walletBalance=0;
-let staked=0;
-let rewards=0;
-let history=[];
-
-/* WALLET CONNECT */
-async function connectWallet(){
-
-if(typeof window.ethereum !== "undefined"){
-
-  try{
-    await window.ethereum.request({ method: 'eth_requestAccounts' });
-
-    provider = new ethers.providers.Web3Provider(window.ethereum);
-    signer = provider.getSigner();
-    userAddress = await signer.getAddress();
-
-    document.getElementById("connectBtn").innerText =
-      userAddress.substring(0,6)+"..."+userAddress.slice(-4);
-
-    document.getElementById("connectBtn").style.background="green";
-
-    // get real ETH balance
-    const balance = await provider.getBalance(userAddress);
-    walletBalance = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
-
-    updateUI();
-
-  }catch(err){
-    alert("Connection Rejected");
+// Stake simulation
+function stake(poolId) {
+  let input = document.getElementById(`pool${poolId}Input`);
+  let amount = parseFloat(input.value);
+  if(isNaN(amount) || amount<=0){
+    alert("Enter a valid amount");
+    return;
   }
-
-}else{
-  alert("MetaMask not installed");
+  if(amount>user.balance){
+    alert("Not enough OP in wallet");
+    return;
+  }
+  stakes[poolId] += amount;
+  user.balance -= amount;
+  document.getElementById(`pool${poolId}Stake`).innerText = stakes[poolId] + " OP";
+  document.getElementById("walletInfo").innerText = `${user.address} | Balance: ${user.balance} OP`;
+  updateDashboard();
+  input.value = "";
 }
 
+// Update dashboard values
+function updateDashboard(){
+  let total = stakes.reduce((a,b)=>a+b,0);
+  document.getElementById("totalStaked").innerText = total + " OP";
+  document.getElementById("pendingRewards").innerText = (total*0.005).toFixed(3) + " OP"; // fake reward
+  document.getElementById("portfolioValue").innerText = "$" + (total*2).toFixed(2); // simulate $ value
 }
-
-/* STAKE */
-function stake(){
-if(!userAddress) return alert("Connect wallet first");
-
-let amt=parseFloat(document.getElementById("amount").value);
-if(!amt||amt<=0) return alert("Enter valid amount");
-if(amt>walletBalance) return alert("Insufficient balance");
-
-walletBalance-=amt;
-staked+=amt;
-let reward=amt*0.02;
-rewards+=reward;
-
-history.push("Staked "+amt+" OP");
-updateUI();
-}
-
-/* UNSTAKE */
-function unstake(){
-if(!userAddress) return alert("Connect wallet first");
-
-let amt=parseFloat(document.getElementById("amount").value);
-if(!amt||amt<=0) return alert("Enter valid amount");
-if(amt>staked) return alert("Not enough staked");
-
-staked-=amt;
-walletBalance+=amt;
-
-history.push("Unstaked "+amt+" OP");
-updateUI();
-}
-
-/* CLAIM */
-function claimRewards(){
-if(!userAddress) return alert("Connect wallet first");
-if(rewards<=0) return alert("No rewards");
-
-walletBalance+=rewards;
-history.push("Claimed "+rewards.toFixed(4)+" OP rewards");
-
-rewards=0;
-updateUI();
-}
-
-/* UI UPDATE */
-function updateUI(){
-document.getElementById("walletBalance").innerText=parseFloat(walletBalance).toFixed(4);
-document.getElementById("totalStaked").innerText=staked.toFixed(4);
-document.getElementById("pendingRewards").innerText=rewards.toFixed(4);
-document.getElementById("rewardDisplay").innerText=rewards.toFixed(4);
-document.getElementById("portfolioValue").innerText=(staked*2).toFixed(2);
-
-let list=document.getElementById("historyList");
-list.innerHTML="";
-history.forEach(h=>{
-let li=document.createElement("li");
-li.innerText=h;
-list.appendChild(li);
-});
-}
-
-/* PAGE SWITCH */
-function showPage(page){
-document.getElementById("dashboardPage").classList.add("hidden");
-document.getElementById("stakePage").classList.add("hidden");
-document.getElementById("rewardsPage").classList.add("hidden");
-document.getElementById("historyPage").classList.add("hidden");
-
-document.getElementById(page+"Page").classList.remove("hidden");
-}
-
 </script>
-
 </body>
 </html>

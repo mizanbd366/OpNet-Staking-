@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>OpNet Staking</title>
+<title>OpNet Staking Pro</title>
+
+<script src="https://cdn.jsdelivr.net/npm/ethers/dist/ethers.min.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#f5f5f5}
+body{margin:0;font-family:Arial;background:#f4f6f9}
 .header{
 background:white;
 padding:15px;
@@ -29,7 +31,7 @@ cursor:pointer;
 display:flex;
 justify-content:space-around;
 background:white;
-padding:10px 0;
+padding:12px 0;
 position:fixed;
 bottom:0;
 width:100%;
@@ -41,13 +43,13 @@ border:none;
 font-weight:bold;
 cursor:pointer;
 }
-.container{padding:20px;padding-bottom:80px}
+.container{padding:20px;padding-bottom:90px}
 .card{
 background:white;
 padding:15px;
-border-radius:10px;
+border-radius:12px;
 margin-bottom:15px;
-box-shadow:0 3px 8px rgba(0,0,0,0.1)
+box-shadow:0 4px 10px rgba(0,0,0,0.08)
 }
 input{
 width:100%;
@@ -77,7 +79,7 @@ margin-top:5px;
 
 <div class="header">
 <div class="logo">OpNet Staking</div>
-<button class="connect" onclick="connectWallet()" id="connectBtn">Connect OpWallet</button>
+<button class="connect" onclick="connectWallet()" id="connectBtn">Connect Wallet</button>
 </div>
 
 <div class="container">
@@ -87,6 +89,7 @@ margin-top:5px;
 
 <div class="card">
 <h3>Dashboard</h3>
+<p>Wallet Balance: <b><span id="walletBalance">0</span> OP</b></p>
 <p>Total Staked: <b><span id="totalStaked">0</span> OP</b></p>
 <p>Pending Rewards: <b><span id="pendingRewards">0</span> OP</b></p>
 <p>Portfolio Value: <b>$<span id="portfolioValue">0</span></b></p>
@@ -101,42 +104,36 @@ margin-top:5px;
 
 </div>
 
-<!-- STAKE PAGE -->
+<!-- STAKE -->
 <div id="stakePage" class="hidden">
-
 <div class="card">
 <h3>Stake / Unstake</h3>
 <input type="number" id="amount" placeholder="Enter OP amount">
 <button class="action stake" onclick="stake()">Stake</button>
 <button class="action unstake" onclick="unstake()">Unstake</button>
 </div>
-
 </div>
 
-<!-- REWARDS PAGE -->
+<!-- REWARDS -->
 <div id="rewardsPage" class="hidden">
-
 <div class="card">
 <h3>Your Rewards</h3>
 <p><b><span id="rewardDisplay">0</span> OP</b></p>
 <button class="action claim" onclick="claimRewards()">Claim Rewards</button>
 </div>
-
 </div>
 
-<!-- HISTORY PAGE -->
+<!-- HISTORY -->
 <div id="historyPage" class="hidden">
-
 <div class="card">
 <h3>Transaction History</h3>
 <ul id="historyList"></ul>
 </div>
-
 </div>
 
 </div>
 
-<!-- BOTTOM NAV -->
+<!-- NAV -->
 <div class="nav">
 <button onclick="showPage('dashboard')">Dashboard</button>
 <button onclick="showPage('stake')">Stake</button>
@@ -146,31 +143,57 @@ margin-top:5px;
 
 <script>
 
-let connected=false;
-let balance=1250;
+let provider;
+let signer;
+let userAddress=null;
+
+let walletBalance=0;
 let staked=0;
 let rewards=0;
 let history=[];
 
-function connectWallet(){
-connected=!connected;
-let btn=document.getElementById("connectBtn");
-if(connected){
-btn.innerText="Connected";
-btn.style.background="green";
+/* WALLET CONNECT */
+async function connectWallet(){
+
+if(typeof window.ethereum !== "undefined"){
+
+  try{
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
+
+    provider = new ethers.providers.Web3Provider(window.ethereum);
+    signer = provider.getSigner();
+    userAddress = await signer.getAddress();
+
+    document.getElementById("connectBtn").innerText =
+      userAddress.substring(0,6)+"..."+userAddress.slice(-4);
+
+    document.getElementById("connectBtn").style.background="green";
+
+    // get real ETH balance
+    const balance = await provider.getBalance(userAddress);
+    walletBalance = parseFloat(ethers.utils.formatEther(balance)).toFixed(4);
+
+    updateUI();
+
+  }catch(err){
+    alert("Connection Rejected");
+  }
+
 }else{
-btn.innerText="Connect OpWallet";
-btn.style.background="#ff6600";
-}
+  alert("MetaMask not installed");
 }
 
+}
+
+/* STAKE */
 function stake(){
-if(!connected) return alert("Connect wallet first!");
+if(!userAddress) return alert("Connect wallet first");
+
 let amt=parseFloat(document.getElementById("amount").value);
 if(!amt||amt<=0) return alert("Enter valid amount");
-if(amt>balance) return alert("Insufficient balance");
+if(amt>walletBalance) return alert("Insufficient balance");
 
-balance-=amt;
+walletBalance-=amt;
 staked+=amt;
 let reward=amt*0.02;
 rewards+=reward;
@@ -179,32 +202,39 @@ history.push("Staked "+amt+" OP");
 updateUI();
 }
 
+/* UNSTAKE */
 function unstake(){
-if(!connected) return alert("Connect wallet first!");
+if(!userAddress) return alert("Connect wallet first");
+
 let amt=parseFloat(document.getElementById("amount").value);
 if(!amt||amt<=0) return alert("Enter valid amount");
 if(amt>staked) return alert("Not enough staked");
 
 staked-=amt;
-balance+=amt;
+walletBalance+=amt;
+
 history.push("Unstaked "+amt+" OP");
 updateUI();
 }
 
+/* CLAIM */
 function claimRewards(){
-if(!connected) return alert("Connect wallet first!");
+if(!userAddress) return alert("Connect wallet first");
 if(rewards<=0) return alert("No rewards");
 
-balance+=rewards;
-history.push("Claimed "+rewards.toFixed(2)+" OP rewards");
+walletBalance+=rewards;
+history.push("Claimed "+rewards.toFixed(4)+" OP rewards");
+
 rewards=0;
 updateUI();
 }
 
+/* UI UPDATE */
 function updateUI(){
-document.getElementById("totalStaked").innerText=staked;
-document.getElementById("pendingRewards").innerText=rewards.toFixed(2);
-document.getElementById("rewardDisplay").innerText=rewards.toFixed(2);
+document.getElementById("walletBalance").innerText=parseFloat(walletBalance).toFixed(4);
+document.getElementById("totalStaked").innerText=staked.toFixed(4);
+document.getElementById("pendingRewards").innerText=rewards.toFixed(4);
+document.getElementById("rewardDisplay").innerText=rewards.toFixed(4);
 document.getElementById("portfolioValue").innerText=(staked*2).toFixed(2);
 
 let list=document.getElementById("historyList");
@@ -216,6 +246,7 @@ list.appendChild(li);
 });
 }
 
+/* PAGE SWITCH */
 function showPage(page){
 document.getElementById("dashboardPage").classList.add("hidden");
 document.getElementById("stakePage").classList.add("hidden");
@@ -224,8 +255,6 @@ document.getElementById("historyPage").classList.add("hidden");
 
 document.getElementById(page+"Page").classList.remove("hidden");
 }
-
-updateUI();
 
 </script>
 
